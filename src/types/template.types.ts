@@ -50,28 +50,39 @@ export const VariableValidationRulesSchema = z.object({
 
 // Schema Zod para TemplateVariable
 export const TemplateVariableSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().min(1).max(100).and(z.string()),
   type: z.enum(['text', 'number', 'date', 'boolean', 'email', 'phone', 'currency']),
-  description: z.string().max(500).optional(),
+  description: z.string().max(500).and(safeDescriptionValidator).optional(),
   default_value: z.any().optional(),
   required: z.boolean(),
   validation_rules: VariableValidationRulesSchema.optional(),
-  placeholder: z.string().max(100).optional(),
+  placeholder: z.string().max(100).and(z.string()({ allowSpecialChars: true })).optional(),
 });
 
 // Schema Zod para TemplateInput
 export const TemplateInputSchema = z.object({
-  name: z.string().min(1).max(255),
-  description: z.string().max(1000).optional(),
-  content: z.string().min(1), // Base64 content
-  content_type: z.string().optional(),
+  name: z.string().min(1).max(255).and(z.string()),
+  description: z.string().max(1000).and(safeDescriptionValidator).optional(),
+  content: base64Validator.and(fileContentValidator),
+  content_type: mimeTypeValidator.optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), // Hex color
   variables: z.array(TemplateVariableSchema).optional(),
-  tags: z.array(z.string().max(50)).optional(),
-  category: z.string().max(100).optional(),
+  tags: z.array(z.string().max(50).and(z.string()({ allowSpecialChars: false }))).optional(),
+  category: z.string().max(100).and(z.string()({ allowSpecialChars: false })).optional(),
   is_public: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
-});
+}).refine(
+  (data) => {
+    if (!data.content_type) return true;
+    // Validate content matches MIME type
+    const { isFileContentMatchesMimeType } = require('../validators');
+    return isFileContentMatchesMimeType(data.content, data.content_type);
+  },
+  {
+    message: 'File content does not match the declared content type',
+    path: ['content'],
+  }
+);
 
 // Template completo retornado pela API
 export interface Template extends TemplateInput, Timestamps {
@@ -96,13 +107,13 @@ export interface Template extends TemplateInput, Timestamps {
 export const TemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string().optional(),
-  content: z.string(),
-  content_type: z.string().optional(),
+  description: safeDescriptionValidator.optional(),
+  content: base64Validator,
+  content_type: mimeTypeValidator.optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   variables: z.array(TemplateVariableSchema).optional(),
-  tags: z.array(z.string()).optional(),
-  category: z.string().optional(),
+  tags: z.array(z.string()({ allowSpecialChars: false })).optional(),
+  category: z.string()({ allowSpecialChars: false }).optional(),
   is_public: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
   file_size: z.number().min(0),
@@ -156,12 +167,12 @@ export interface TemplateUpdateInput {
 
 // Schema Zod para TemplateUpdateInput
 export const TemplateUpdateInputSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  description: z.string().max(1000).optional(),
+  name: z.string().min(1).max(255).and(z.string()).optional(),
+  description: z.string().max(1000).and(safeDescriptionValidator).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   variables: z.array(TemplateVariableSchema).optional(),
-  tags: z.array(z.string().max(50)).optional(),
-  category: z.string().max(100).optional(),
+  tags: z.array(z.string().max(50).and(z.string()({ allowSpecialChars: false }))).optional(),
+  category: z.string().max(100).and(z.string()({ allowSpecialChars: false })).optional(),
   is_public: z.boolean().optional(),
   is_active: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),

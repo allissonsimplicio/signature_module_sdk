@@ -16,3 +16,7 @@ yarn-error.log*
 # Ignorar diretórios de build
 build/
 dist/
+
+# outros
+
+.claude/

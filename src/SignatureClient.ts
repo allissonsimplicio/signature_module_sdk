@@ -278,6 +278,20 @@ export class SignatureClient {
     return this.updateEnvelope(envelopeId, { status: 'running' } as any);
   }
 
+  /**
+   * Exclui um envelope
+   */
+  async deleteEnvelope(id: string): Promise<void> {
+    if (!id) {
+      throw ApiError.validationError('ID do envelope é obrigatório');
+    }
+
+    await this.makeRequest<void>(
+      'DELETE',
+      `/envelopes/${id}`
+    );
+  }
+
   // ==================== GERENCIAMENTO DE DOCUMENTOS ====================
 
   /**
@@ -436,6 +450,11 @@ export class SignatureClient {
       undefined,
       { params: filters }
     );
+
+    // Valida cada signatário na resposta
+    if (response.data) {
+      response.data = response.data.map(signer => SignerSchema.parse(signer));
+    }
 
     return response;
   }

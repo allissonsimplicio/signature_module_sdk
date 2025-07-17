@@ -22,7 +22,7 @@ export interface DocumentFromTemplateInput {
 // Schema Zod para DocumentUploadInput
 export const DocumentUploadInputSchema = z.object({
   name: z.string().min(1).max(255),
-  content: z.string().min(1), // Base64 content
+  content: z.string().min(1),
   content_type: z.string().optional(),
   description: z.string().max(1000).optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
@@ -91,10 +91,10 @@ export interface QualificationRequirement {
 export const DocumentSchema = z.object({
   id: z.string(),
   envelope_id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
+  name: safeNameValidator,
+  description: safeDescriptionValidator.optional(),
   status: z.enum(['draft', 'running', 'completed', 'canceled', 'closed']),
-  content_type: z.string(),
+  content_type: mimeTypeValidator,
   file_size: z.number().min(0),
   page_count: z.number().min(1),
   download_url: z.string().url().optional(),

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeNameValidator, mimeTypeValidator, base64Validator } from '../validators';
 
 // Tipos de status comuns
 export type EnvelopeStatus = 'draft' | 'running' | 'completed' | 'canceled' | 'closed';
@@ -8,8 +9,10 @@ export type SignerStatus = 'pending' | 'signed' | 'rejected' | 'canceled';
 // Métodos de autenticação disponíveis
 export type AuthenticationMethod = 
   | 'email_token' 
+  | 'email_otp'
   | 'whatsapp_token' 
   | 'sms_token'
+  | 'sms_otp'
   | 'ip_address'
   | 'geolocation'
   | 'official_document'
@@ -18,6 +21,9 @@ export type AuthenticationMethod =
 
 // Tipos de qualificação
 export type QualificationType = 'parte' | 'testemunha';
+
+// Tipos de documento
+export type DocumentType = 'cpf' | 'cnpj' | 'rg' | 'passport' | 'other';
 
 // Resposta padrão da API
 export interface ApiResponse<T = any> {
@@ -69,6 +75,14 @@ export interface FileInfo {
   type: string;
   content?: string; // Base64 encoded content
 }
+
+// Schema Zod para FileInfo
+export const FileInfoSchema = z.object({
+  name: safeNameValidator,
+  size: z.number().min(0),
+  type: mimeTypeValidator,
+  content: base64Validator.optional(),
+});
 
 // Timestamps padrão
 export interface Timestamps {

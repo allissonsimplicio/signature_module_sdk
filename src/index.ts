@@ -24,6 +24,9 @@ export {
 export * from './types/template.types';
 export * from './types/event.types';
 
+// Exporta validadores
+export * from './validators';
+
 // Exporta versão do SDK
 export const SDK_VERSION = '1.0.0';
 
@@ -49,10 +52,12 @@ export function createSignatureClient(baseURL: string, apiToken: string) {
 
 /**
  * Utilitários para validação
+ * @deprecated Use os validadores individuais exportados do módulo validators
  */
 export const ValidationUtils = {
   /**
    * Valida se um email é válido
+   * @deprecated Use z.string().email() do Zod
    */
   isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -138,6 +143,7 @@ export const ValidationUtils = {
 
   /**
    * Valida se uma URL é válida
+   * @deprecated Use safeUrlValidator do módulo validators
    */
   isValidURL(url: string): boolean {
     try {
@@ -154,6 +160,51 @@ export const ValidationUtils = {
   isValidHexColor(color: string): boolean {
     const hexRegex = /^#[0-9A-Fa-f]{6}$/;
     return hexRegex.test(color);
+  },
+
+  /**
+   * Valida se o conteúdo é base64 válido
+   * @deprecated Use base64Validator do módulo validators
+   */
+  isValidBase64(content: string): boolean {
+    const { isValidBase64 } = require('./validators');
+    return isValidBase64(content);
+  },
+
+  /**
+   * Valida se o tipo MIME é permitido
+   * @deprecated Use mimeTypeValidator do módulo validators
+   */
+  isValidMimeType(mimeType: string): boolean {
+    const { isValidMimeType } = require('./validators');
+    return isValidMimeType(mimeType);
+  },
+
+  /**
+   * Valida se o nome é seguro
+   * @deprecated Use safeNameValidator do módulo validators
+   */
+  isSafeName(name: string): boolean {
+    const { isSafeName } = require('./validators');
+    return isSafeName(name);
+  },
+
+  /**
+   * Valida se a descrição é segura
+   * @deprecated Use safeDescriptionValidator do módulo validators
+   */
+  isSafeDescription(description: string): boolean {
+    const { isSafeDescription } = require('./validators');
+    return isSafeDescription(description);
+  },
+
+  /**
+   * Valida se a URL é segura
+   * @deprecated Use safeUrlValidator do módulo validators
+   */
+  isSafeUrl(url: string): boolean {
+    const { isSafeUrl } = require('./validators');
+    return isSafeUrl(url);
   },
 };
 
@@ -225,6 +276,7 @@ export const Constants = {
     'text/plain',
     'image/jpeg',
     'image/png',
+    'application/octet-stream',
   ],
 
   // Extensões de arquivo suportadas

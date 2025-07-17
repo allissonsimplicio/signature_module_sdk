@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SignerStatus, AuthenticationMethod, Coordinates, Timestamps } from './common.types';
+import { SignerStatus, AuthenticationMethod, DocumentType, Coordinates, Timestamps } from './common.types';
 
 // Input para criação de signatário
 export interface SignerInput {
@@ -7,7 +7,7 @@ export interface SignerInput {
   email: string;
   phone_number?: string;
   document_number?: string; // CPF, CNPJ, etc.
-  document_type?: 'cpf' | 'cnpj' | 'rg' | 'passport' | 'other';
+  document_type?: DocumentType;
   birth_date?: string; // ISO date
   address?: SignerAddress;
   signature_order?: number;
@@ -37,14 +37,14 @@ export interface NotificationPreferences {
 
 // Schema Zod para SignerAddress
 export const SignerAddressSchema = z.object({
-  street: z.string().min(1).max(255),
-  number: z.string().min(1).max(20),
-  complement: z.string().max(100).optional(),
-  neighborhood: z.string().min(1).max(100),
-  city: z.string().min(1).max(100),
-  state: z.string().min(2).max(50),
-  zip_code: z.string().min(5).max(20),
-  country: z.string().max(50).optional(),
+  street: z.string().min(1).max(255).and(z.string()({ allowSpecialChars: true, allowNumbers: true })),
+  number: z.string().min(1).max(20).and(z.string()({ allowSpecialChars: true, allowNumbers: true })),
+  complement: z.string().max(100).and(z.string()({ allowSpecialChars: true, allowNumbers: true })).optional(),
+  neighborhood: z.string().min(1).max(100).and(z.string()({ allowSpecialChars: true, allowNumbers: true })),
+  city: z.string().min(1).max(100).and(z.string()),
+  state: z.string().min(2).max(50).and(z.string()),
+  zip_code: z.string().min(5).max(20).and(z.string()({ allowNumbers: true, allowSpecialChars: false })),
+  country: z.string().max(50).and(z.string()).optional(),
 });
 
 // Schema Zod para NotificationPreferences
@@ -57,10 +57,10 @@ export const NotificationPreferencesSchema = z.object({
 
 // Schema Zod para SignerInput
 export const SignerInputSchema = z.object({
-  name: z.string().min(1).max(255),
+  name: z.string().min(1).max(255).and(z.string()),
   email: z.string().email(),
   phone_number: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional(), // E.164 format
-  document_number: z.string().max(50).optional(),
+  document_number: z.string().max(50).and(z.string()({ allowNumbers: true, allowSpecialChars: false })).optional(),
   document_type: z.enum(['cpf', 'cnpj', 'rg', 'passport', 'other']).optional(),
   birth_date: z.string().date().optional(),
   address: SignerAddressSchema.optional(),
@@ -164,7 +164,7 @@ export const SignerSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   phone_number: z.string().optional(),
-  document_number: z.string().optional(),
+  document_number: z.string()({ allowNumbers: true, allowSpecialChars: false }).optional(),
   document_type: z.enum(['cpf', 'cnpj', 'rg', 'passport', 'other']).optional(),
   birth_date: z.string().date().optional(),
   address: SignerAddressSchema.optional(),
@@ -172,12 +172,12 @@ export const SignerSchema = z.object({
   notification_preferences: NotificationPreferencesSchema.optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
   status: z.enum(['pending', 'signed', 'rejected', 'canceled']),
-  signature_url: z.string().url().optional(),
+  signature_url: safeUrlValidator.optional(),
   access_token: z.string().optional(),
   access_expires_at: z.string().datetime().optional(),
   signed_at: z.string().datetime().optional(),
   rejected_at: z.string().datetime().optional(),
-  rejection_reason: z.string().optional(),
+  rejection_reason: safeDescriptionValidator.optional(),
   last_access_at: z.string().datetime().optional(),
   access_count: z.number().min(0),
   ip_addresses: z.array(z.string()),
@@ -186,7 +186,7 @@ export const SignerSchema = z.object({
     id: z.string(),
     signer_id: z.string(),
     method: z.enum(['email_token', 'whatsapp_token', 'sms_token', 'ip_address', 'geolocation', 'official_document', 'selfie_with_document', 'address_proof']),
-    description: z.string(),
+    description: safeDescriptionValidator,
     is_required: z.boolean(),
     is_satisfied: z.boolean(),
     satisfied_at: z.string().datetime().optional(),
@@ -198,7 +198,7 @@ export const SignerSchema = z.object({
     document_id: z.string(),
     signer_id: z.string(),
     qualification_type: z.enum(['parte', 'testemunha']),
-    description: z.string().optional(),
+    description: safeDescriptionValidator.optional(),
     is_satisfied: z.boolean(),
     satisfied_at: z.string().datetime().optional(),
   })),

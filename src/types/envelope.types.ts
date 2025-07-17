@@ -11,6 +11,7 @@ export interface EnvelopeInput {
   block_on_refusal?: boolean;
   custom_fields?: Record<string, any>;
   callback_url?: string;
+  owner_id?: string;
 }
 
 // Configurações de notificação
@@ -43,6 +44,7 @@ export const EnvelopeInputSchema = z.object({
   block_on_refusal: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
   callback_url: z.string().url().optional(),
+  owner_id: z.string().optional(),
 });
 
 // Envelope completo retornado pela API
@@ -77,15 +79,16 @@ export interface ActivationRequirement {
 // Schema Zod para Envelope
 export const EnvelopeSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
+  name: safeNameValidator,
+  description: safeDescriptionValidator.optional(),
   status: z.enum(['draft', 'running', 'completed', 'canceled', 'closed']),
   deadline: z.string().datetime().optional(),
   auto_close: z.boolean().optional(),
   notification_settings: NotificationSettingsSchema.optional(),
   block_on_refusal: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
-  callback_url: z.string().url().optional(),
+  callback_url: z.string().url().and(safeUrlValidator).optional(),
+  owner_id: z.string().optional(),
   documents_count: z.number().min(0),
   signers_count: z.number().min(0),
   signed_count: z.number().min(0),
@@ -103,7 +106,7 @@ export const EnvelopeSchema = z.object({
   })),
   owner: z.object({
     id: z.string(),
-    name: z.string(),
+    name: safeNameValidator,
     email: z.string().email(),
   }),
   created_at: z.string().datetime(),
