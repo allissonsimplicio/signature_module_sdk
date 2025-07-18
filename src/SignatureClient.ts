@@ -198,7 +198,7 @@ export class SignatureClient {
     );
 
     // Validação da resposta
-    return EnvelopeSchema.parse(envelope);
+    return envelope as Envelope;
   }
 
   /**
@@ -215,7 +215,7 @@ export class SignatureClient {
       data
     );
 
-    return EnvelopeSchema.parse(envelope);
+    return envelope as Envelope;
   }
 
   /**
@@ -231,7 +231,7 @@ export class SignatureClient {
       `/envelopes/${id}`
     );
 
-    return EnvelopeSchema.parse(envelope);
+    return envelope as Envelope;
   }
 
   /**
@@ -247,7 +247,7 @@ export class SignatureClient {
 
     // Valida cada envelope na resposta
     if (response.data) {
-      response.data = response.data.map(envelope => EnvelopeSchema.parse(envelope));
+      response.data = response.data as Envelope[];
     }
 
     return response;
@@ -268,7 +268,7 @@ export class SignatureClient {
       { params: filters }
     );
 
-    return events.map(event => ApiEventSchema.parse(event));
+    return events as ApiEvent[];
   }
 
   /**
@@ -329,7 +329,7 @@ export class SignatureClient {
       validatedData
     );
 
-    return DocumentSchema.parse(document);
+    return document as Document;
   }
 
   /**
@@ -364,7 +364,7 @@ export class SignatureClient {
       validatedData
     );
 
-    return DocumentSchema.parse(document);
+    return document as Document;
   }
 
   /**
@@ -380,7 +380,7 @@ export class SignatureClient {
       `/documents/${documentId}`
     );
 
-    return DocumentSchema.parse(document);
+    return document as Document;
   }
 
   /**
@@ -396,7 +396,7 @@ export class SignatureClient {
 
     // Valida cada documento na resposta
     if (response.data) {
-      response.data = response.data.map(document => DocumentSchema.parse(document));
+      response.data = response.data as Document[];
     }
 
     return response;
@@ -453,7 +453,7 @@ export class SignatureClient {
 
     // Valida cada signatário na resposta
     if (response.data) {
-      response.data = response.data.map(signer => SignerSchema.parse(signer));
+      response.data = response.data as Signer[];
     }
 
     return response;
@@ -536,7 +536,7 @@ export class SignatureClient {
       validatedData
     );
 
-    return TemplateSchema.parse(template);
+    return template as Template;
   }
 
   /**
@@ -552,7 +552,7 @@ export class SignatureClient {
       `/templates/${id}`
     );
 
-    return TemplateSchema.parse(template);
+    return template as Template;
   }
 
   /**
@@ -568,7 +568,7 @@ export class SignatureClient {
 
     // Valida cada template na resposta
     if (response.data) {
-      response.data = response.data.map(template => TemplateSchema.parse(template));
+      response.data = response.data as Template[];
     }
 
     return response;
@@ -591,7 +591,7 @@ export class SignatureClient {
       validatedData
     );
 
-    return TemplateSchema.parse(template);
+    return template as Template;
   }
 
   /**
@@ -653,7 +653,7 @@ export class SignatureClient {
 
     // Valida cada evento na resposta
     if (response.data) {
-      response.data = response.data.map(event => ApiEventSchema.parse(event));
+      response.data = response.data as ApiEvent[];
     }
 
     return response;

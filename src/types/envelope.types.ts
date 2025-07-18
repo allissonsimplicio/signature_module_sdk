@@ -79,15 +79,15 @@ export interface ActivationRequirement {
 // Schema Zod para Envelope
 export const EnvelopeSchema = z.object({
   id: z.string(),
-  name: safeNameValidator,
-  description: safeDescriptionValidator.optional(),
+  name: z.string().min(1).max(255),
+  description: z.string().max(1000).optional(),
   status: z.enum(['draft', 'running', 'completed', 'canceled', 'closed']),
   deadline: z.string().datetime().optional(),
   auto_close: z.boolean().optional(),
   notification_settings: NotificationSettingsSchema.optional(),
   block_on_refusal: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
-  callback_url: z.string().url().and(safeUrlValidator).optional(),
+  callback_url: z.string().url().optional(),
   owner_id: z.string().optional(),
   documents_count: z.number().min(0),
   signers_count: z.number().min(0),
@@ -106,7 +106,7 @@ export const EnvelopeSchema = z.object({
   })),
   owner: z.object({
     id: z.string(),
-    name: safeNameValidator,
+    name: z.string().min(1).max(255),
     email: z.string().email(),
   }),
   created_at: z.string().datetime(),

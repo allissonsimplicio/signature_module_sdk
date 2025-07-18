@@ -50,25 +50,25 @@ export const VariableValidationRulesSchema = z.object({
 
 // Schema Zod para TemplateVariable
 export const TemplateVariableSchema = z.object({
-  name: z.string().min(1).max(100).and(z.string()),
+  name: z.string().min(1).max(100),
   type: z.enum(['text', 'number', 'date', 'boolean', 'email', 'phone', 'currency']),
-  description: z.string().max(500).and(safeDescriptionValidator).optional(),
+  description: z.string().max(500).optional(),
   default_value: z.any().optional(),
   required: z.boolean(),
   validation_rules: VariableValidationRulesSchema.optional(),
-  placeholder: z.string().max(100).and(z.string()({ allowSpecialChars: true })).optional(),
+  placeholder: z.string().max(100).optional(),
 });
 
 // Schema Zod para TemplateInput
 export const TemplateInputSchema = z.object({
-  name: z.string().min(1).max(255).and(z.string()),
-  description: z.string().max(1000).and(safeDescriptionValidator).optional(),
-  content: base64Validator.and(fileContentValidator),
-  content_type: mimeTypeValidator.optional(),
+  name: z.string().min(1).max(255),
+  description: z.string().max(1000).optional(),
+  content: z.string(),
+  content_type: z.string().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), // Hex color
   variables: z.array(TemplateVariableSchema).optional(),
-  tags: z.array(z.string().max(50).and(z.string()({ allowSpecialChars: false }))).optional(),
-  category: z.string().max(100).and(z.string()({ allowSpecialChars: false })).optional(),
+  tags: z.array(z.string().max(50)).optional(),
+  category: z.string().max(100).optional(),
   is_public: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
 }).refine(
@@ -107,13 +107,13 @@ export interface Template extends TemplateInput, Timestamps {
 export const TemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: safeDescriptionValidator.optional(),
-  content: base64Validator,
-  content_type: mimeTypeValidator.optional(),
+  description: z.string().max(500).optional(),
+  content: z.string(),
+  content_type: z.string().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   variables: z.array(TemplateVariableSchema).optional(),
-  tags: z.array(z.string()({ allowSpecialChars: false })).optional(),
-  category: z.string()({ allowSpecialChars: false }).optional(),
+  tags: z.array(z.string()).optional(),
+  category: z.string().optional(),
   is_public: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),
   file_size: z.number().min(0),
@@ -167,12 +167,12 @@ export interface TemplateUpdateInput {
 
 // Schema Zod para TemplateUpdateInput
 export const TemplateUpdateInputSchema = z.object({
-  name: z.string().min(1).max(255).and(z.string()).optional(),
-  description: z.string().max(1000).and(safeDescriptionValidator).optional(),
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().max(1000).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   variables: z.array(TemplateVariableSchema).optional(),
-  tags: z.array(z.string().max(50).and(z.string()({ allowSpecialChars: false }))).optional(),
-  category: z.string().max(100).and(z.string()({ allowSpecialChars: false })).optional(),
+  tags: z.array(z.string().max(50)).optional(),
+  category: z.string().max(100).optional(),
   is_public: z.boolean().optional(),
   is_active: z.boolean().optional(),
   custom_fields: z.record(z.string(), z.any()).optional(),

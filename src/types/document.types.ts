@@ -91,10 +91,10 @@ export interface QualificationRequirement {
 export const DocumentSchema = z.object({
   id: z.string(),
   envelope_id: z.string(),
-  name: safeNameValidator,
-  description: safeDescriptionValidator.optional(),
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
   status: z.enum(['draft', 'running', 'completed', 'canceled', 'closed']),
-  content_type: mimeTypeValidator,
+  content_type: z.string(),
   file_size: z.number().min(0),
   page_count: z.number().min(1),
   download_url: z.string().url().optional(),

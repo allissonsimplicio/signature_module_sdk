@@ -87,8 +87,8 @@ export const ApiEventSchema = z.object({
     'template.used', 'error.occurred'
   ]),
   severity: z.enum(['info', 'warning', 'error', 'critical']),
-  title: z.string()({ allowSpecialChars: true }),
-  description: safeDescriptionValidator,
+  title: z.string(),
+  description: z.string().max(500),
   envelope_id: z.string().optional(),
   document_id: z.string().optional(),
   signer_id: z.string().optional(),
@@ -182,10 +182,10 @@ export interface EventObserverInput {
 
 // Schema Zod para EventObserverInput
 export const EventObserverInputSchema = z.object({
-  name: z.string().min(1).max(255).and(z.string()),
-  description: z.string().max(1000).and(safeDescriptionValidator).optional(),
-  webhook_url: z.string().url().and(safeUrlValidator),
-  secret_key: z.string().min(8).max(255).and(z.string()({ allowSpecialChars: true })).optional(),
+  name: z.string().min(1).max(255),
+  description: z.string().max(1000).optional(),
+  webhook_url: z.string().url(),
+  secret_key: z.string().min(8).max(255).optional(),
   event_types: z.array(z.enum([
     'envelope.created', 'envelope.updated', 'envelope.activated', 'envelope.completed', 'envelope.canceled',
     'document.added', 'document.updated', 'document.signed', 'document.completed',

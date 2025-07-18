@@ -29,7 +29,7 @@
     "envelope",
     "document-signing"
   ],
-  "author": "OpenHands",
+  "author": "Alos",
   "license": "MIT",
   "files": [
     "dist/**/*"

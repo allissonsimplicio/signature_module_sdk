@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { safeNameValidator, mimeTypeValidator, base64Validator } from '../validators';
 
 // Tipos de status comuns
 export type EnvelopeStatus = 'draft' | 'running' | 'completed' | 'canceled' | 'closed';
@@ -78,10 +77,10 @@ export interface FileInfo {
 
 // Schema Zod para FileInfo
 export const FileInfoSchema = z.object({
-  name: safeNameValidator,
+  name: z.string().min(1).max(100),
   size: z.number().min(0),
-  type: mimeTypeValidator,
-  content: base64Validator.optional(),
+  type: z.string(),
+  content: z.string().optional(),
 });
 
 // Timestamps padrão
