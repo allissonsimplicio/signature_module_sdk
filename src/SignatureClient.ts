@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ApiError } from './ApiError';
-import { ClientConfig, ApiResponse, PaginatedResponse } from './types/common.types';
+import { ClientConfig, ApiResponse, PaginatedResponse, PreviewOptions, PreviewResponse, ZipGenerationStatus } from './types/common.types';
 import { 
   Envelope, 
   EnvelopeInput, 
@@ -710,6 +710,91 @@ export class SignatureClient {
       'DELETE',
       `/event-observers/${id}`
     );
+  }
+
+  // ==================== DOWNLOAD E PREVIEW ====================
+
+  /**
+   * Faz download de um documento assinado
+   */
+  async downloadSignedDocument(documentId: string): Promise<string> {
+    if (!documentId) {
+      throw ApiError.validationError('ID do documento é obrigatório');
+    }
+
+    return this.makeRequest<string>('GET', `/documents/${documentId}/download`);
+  }
+
+  /**
+   * Gera ZIP com todos os documentos de um envelope
+   */
+  async generateEnvelopeZip(envelopeId: string): Promise<{jobId: string}> {
+    if (!envelopeId) {
+      throw ApiError.validationError('ID do envelope é obrigatório');
+    }
+
+    return this.makeRequest<{jobId: string}>('POST', `/envelopes/${envelopeId}/generate-zip`);
+  }
+
+  /**
+   * Obtém status da geração do ZIP
+   */
+  async getZipStatus(jobId: string): Promise<ZipGenerationStatus> {
+    if (!jobId) {
+      throw ApiError.validationError('ID do job é obrigatório');
+    }
+
+    return this.makeRequest<ZipGenerationStatus>('GET', `/zip-jobs/${jobId}/status`);
+  }
+
+  /**
+   * Faz download do ZIP gerado
+   */
+  async downloadEnvelopeZip(jobId: string): Promise<string> {
+    if (!jobId) {
+      throw ApiError.validationError('ID do job é obrigatório');
+    }
+
+    return this.makeRequest<string>('GET', `/zip-jobs/${jobId}/download`);
+  }
+
+  /**
+   * Obtém preview de um documento
+   */
+  async getDocumentPreview(
+    documentId: string, 
+    options?: PreviewOptions
+  ): Promise<PreviewResponse> {
+    if (!documentId) {
+      throw ApiError.validationError('ID do documento é obrigatório');
+    }
+
+    return this.makeRequest<PreviewResponse>('GET', `/documents/${documentId}/preview`, undefined, {
+      params: options
+    });
+  }
+
+  /**
+   * Cancela um envelope com motivo específico
+   */
+  async cancelEnvelope(
+    envelopeId: string, 
+    reason: string, 
+    notifySigners: boolean = true
+  ): Promise<Envelope> {
+    if (!envelopeId) {
+      throw ApiError.validationError('ID do envelope é obrigatório');
+    }
+
+    if (!reason) {
+      throw ApiError.validationError('Motivo do cancelamento é obrigatório');
+    }
+
+    return this.updateEnvelope(envelopeId, {
+      status: 'canceled',
+      cancellation_reason: reason,
+      notify_signers: notifySigners
+    } as any);
   }
 
   // ==================== MÉTODOS UTILITÁRIOS ====================

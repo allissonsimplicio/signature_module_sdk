@@ -96,3 +96,26 @@ export interface BaseFilters {
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
 }
+
+// Tipos para funcionalidades de download e preview
+export interface PreviewOptions {
+  width?: number;
+  height?: number;
+  page?: number;
+  format?: 'png' | 'jpg';
+}
+
+export interface PreviewResponse {
+  preview_url: string;
+  expires_at: string;
+}
+
+export interface ZipGenerationStatus {
+  job_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  created_at: string;
+  updated_at: string;
+  download_url?: string;
+  expires_at?: string;
+  error_message?: string;
+}
