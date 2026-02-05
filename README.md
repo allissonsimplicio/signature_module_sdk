@@ -1,10 +1,16 @@
-# Signature Module SDK v3.0.1
+# Signature Module SDK v3.1.0
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node.js-%3E%3D14.0.0-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 SDK completo em TypeScript para integração com a API de Assinatura Digital. Inclui suporte avançado para gestão de usuários e organizações, API tokens, templates DOCX com variáveis, notificações multi-canal, autenticação de assinantes, verificação pública e arquitetura multi-tenant.
+
+## 📦 Instalação
+
+```bash
+npm install @alos32/signature-module-sdk
+```
 
 ## 📋 Índice
 
