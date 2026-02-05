@@ -1,0 +1,80 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UpdateEventObserverDtoSchema = exports.CreateEventObserverDtoSchema = exports.EventObserverSchema = exports.EventTypeSchema = void 0;
+const zod_1 = require("zod");
+// Schema Zod para EventType
+exports.EventTypeSchema = zod_1.z.enum([
+    'envelopeCreated',
+    'envelopeUpdated',
+    'envelopeActivated',
+    'envelopeCompleted',
+    'envelopeCanceled',
+    'envelopeExpired',
+    'documentAdded',
+    'documentUpdated',
+    'documentSigned',
+    'documentRefused',
+    'documentCompleted',
+    'signerAdded',
+    'signerUpdated',
+    'signerNotified',
+    'signerAccessed',
+    'signerAuthenticated',
+    'signerSigned',
+    'signerRejected',
+    'authenticationRequired',
+    'authenticationCompleted',
+    'authenticationFailed',
+    'qualificationAdded',
+    'qualificationSatisfied',
+    'notificationSent',
+    'notificationDelivered',
+    'notificationFailed',
+    'templateUsed',
+    'zipGenerated',
+    'zipFailed',
+    'errorOccurred',
+]);
+// Schemas Zod
+exports.EventObserverSchema = zod_1.z.object({
+    id: zod_1.z.string().uuid(),
+    name: zod_1.z.string().min(1).max(255),
+    callbackUrl: zod_1.z.string().url(),
+    eventTypes: zod_1.z.array(exports.EventTypeSchema),
+    isActive: zod_1.z.boolean(),
+    description: zod_1.z.string().max(1000).optional(),
+    secret: zod_1.z.string().max(255).optional(),
+    customHeaders: zod_1.z.record(zod_1.z.string(), zod_1.z.string()).optional(),
+    timeoutSeconds: zod_1.z.number().int().min(1).max(300).optional(),
+    maxRetries: zod_1.z.number().int().min(0).max(10).optional(),
+    totalDeliveries: zod_1.z.number().int().min(0).optional(),
+    successfulDeliveries: zod_1.z.number().int().min(0).optional(),
+    failedDeliveries: zod_1.z.number().int().min(0).optional(),
+    lastTriggeredAt: zod_1.z.string().datetime().optional(),
+    organizationId: zod_1.z.string().uuid(),
+    createdAt: zod_1.z.string().datetime(),
+    updatedAt: zod_1.z.string().datetime(),
+});
+exports.CreateEventObserverDtoSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(255),
+    callbackUrl: zod_1.z.string().url(),
+    eventTypes: zod_1.z.array(exports.EventTypeSchema).min(1),
+    isActive: zod_1.z.boolean().optional().default(true),
+    description: zod_1.z.string().max(1000).optional(),
+    secret: zod_1.z.string().max(255).optional(),
+    customHeaders: zod_1.z.record(zod_1.z.string(), zod_1.z.string()).optional(),
+    timeoutSeconds: zod_1.z.number().int().min(1).max(300).optional(),
+    maxRetries: zod_1.z.number().int().min(0).max(10).optional(),
+});
+exports.UpdateEventObserverDtoSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(255).optional(),
+    callbackUrl: zod_1.z.string().url().optional(),
+    eventTypes: zod_1.z.array(exports.EventTypeSchema).min(1).optional(),
+    isActive: zod_1.z.boolean().optional(),
+    description: zod_1.z.string().max(1000).optional(),
+    secret: zod_1.z.string().max(255).optional(),
+    customHeaders: zod_1.z.record(zod_1.z.string(), zod_1.z.string()).optional(),
+    timeoutSeconds: zod_1.z.number().int().min(1).max(300).optional(),
+    maxRetries: zod_1.z.number().int().min(0).max(10).optional(),
+});
+//# sourceMappingURL=webhook.types.js.map

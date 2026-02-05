@@ -1,0 +1,170 @@
+import { AxiosInstance } from 'axios';
+import { ReceiptEnvelope, CreateReceiptEnvelopeInput, SendReceiptTokensResponse, ValidateReceiptTokenInput, ValidateReceiptTokenResponse, ConfirmReceiptInput, ConfirmReceiptResponse, ReceiptInfo, ReceiptHistoryResponse } from '../types/receipt.types';
+/**
+ * Service for managing receipt confirmation workflows
+ *
+ * Handles:
+ * - Creating receipt envelopes
+ * - Sending receipt tokens to receivers
+ * - Validating receipt tokens
+ * - Confirming receipt
+ * - Retrieving receipt information and history
+ *
+ * @example
+ * ```typescript
+ * // Create receipt envelope
+ * const envelope = await client.receipts.create({
+ *   name: 'Contract Delivery',
+ *   receivers: [
+ *     { name: 'Client', email: 'client@example.com', allowedChannels: ['EMAIL'] }
+ *   ]
+ * });
+ *
+ * // Send receipt tokens
+ * await client.receipts.sendTokens(envelope.id);
+ * ```
+ */
+export declare class ReceiptService {
+    private http;
+    constructor(http: AxiosInstance);
+    /**
+     * Creates a new receipt envelope
+     *
+     * @param dto - Receipt envelope configuration
+     * @returns Created receipt envelope
+     *
+     * @example
+     * ```typescript
+     * const envelope = await client.receipts.create({
+     *   name: 'Invoice Delivery',
+     *   description: 'Monthly invoice for December 2024',
+     *   receivers: [
+     *     {
+     *       name: 'John Doe',
+     *       email: 'john@example.com',
+     *       phone: '+5511987654321',
+     *       allowedChannels: ['EMAIL', 'WHATSAPP']
+     *     }
+     *   ]
+     * });
+     * ```
+     */
+    create(dto: CreateReceiptEnvelopeInput): Promise<ReceiptEnvelope>;
+    /**
+     * Sends receipt tokens to all pending receivers
+     *
+     * @param envelopeId - ID of the receipt envelope
+     * @returns Number of tokens sent
+     *
+     * @example
+     * ```typescript
+     * const result = await client.receipts.sendTokens('envelope-id');
+     * console.log(`Sent ${result.sent} receipt tokens`);
+     * ```
+     */
+    sendTokens(envelopeId: string): Promise<SendReceiptTokensResponse>;
+    /**
+     * Validates a receipt token (public endpoint)
+     *
+     * Checks if the token is valid, not expired, and not used.
+     *
+     * @param dto - Signer ID and token
+     * @returns Validation result with receiver and envelope info
+     *
+     * @example
+     * ```typescript
+     * const result = await client.receipts.validateToken({
+     *   signerId: 'signer-id',
+     *   token: '123456'
+     * });
+     *
+     * if (result.valid) {
+     *   console.log('Token is valid!');
+     * }
+     * ```
+     */
+    validateToken(dto: ValidateReceiptTokenInput): Promise<ValidateReceiptTokenResponse>;
+    /**
+     * Gets receipt information for a specific envelope (public endpoint)
+     *
+     * Returns envelope details and receiver information.
+     * Useful for displaying receipt confirmation page.
+     *
+     * @param envelopeId - ID of the receipt envelope
+     * @param token - 6-digit token
+     * @returns Receipt information
+     *
+     * @example
+     * ```typescript
+     * const info = await client.receipts.getInfo('envelope-id', '123456');
+     * console.log(`Envelope: ${info.envelopeName}`);
+     * console.log(`Progress: ${info.receivedCount}/${info.receiversCount}`);
+     * ```
+     */
+    getInfo(envelopeId: string, token: string): Promise<ReceiptInfo>;
+    /**
+     * Confirms document receipt (public endpoint)
+     *
+     * Processes the receipt confirmation using the validated token.
+     * May complete the envelope if all receivers have confirmed.
+     *
+     * @param envelopeId - ID of the receipt envelope
+     * @param dto - Confirmation data with token and channel
+     * @param metadata - Request metadata (IP and user agent)
+     * @returns Confirmation result
+     *
+     * @example
+     * ```typescript
+     * const result = await client.receipts.confirm('envelope-id', {
+     *   token: '123456',
+     *   channel: 'EMAIL',
+     *   signerId: 'signer-id'
+     * }, {
+     *   ip: '192.168.1.1',
+     *   userAgent: 'Mozilla/5.0...'
+     * });
+     *
+     * console.log(`Receipt confirmed at: ${result.confirmedAt}`);
+     * console.log(`Envelope completed: ${result.isCompleted}`);
+     * ```
+     */
+    confirm(envelopeId: string, dto: ConfirmReceiptInput, metadata: {
+        ip: string;
+        userAgent: string;
+    }): Promise<ConfirmReceiptResponse>;
+    /**
+     * Downloads the document with receipt stamp (public endpoint)
+     *
+     * Returns the PDF document with receipt confirmation stamp applied.
+     *
+     * @param envelopeId - ID of the receipt envelope
+     * @param token - 6-digit token
+     * @returns Document buffer
+     *
+     * @example
+     * ```typescript
+     * const pdfBuffer = await client.receipts.downloadDocument('envelope-id', '123456');
+     * fs.writeFileSync('received-document.pdf', pdfBuffer);
+     * ```
+     */
+    downloadDocument(envelopeId: string, token: string): Promise<Buffer>;
+    /**
+     * Gets receipt history for an envelope (public endpoint)
+     *
+     * Returns a chronological list of all receipt confirmations.
+     *
+     * @param envelopeId - ID of the receipt envelope
+     * @param token - 6-digit token
+     * @returns Receipt history
+     *
+     * @example
+     * ```typescript
+     * const history = await client.receipts.getHistory('envelope-id', '123456');
+     * history.history.forEach(entry => {
+     *   console.log(`${entry.receiverName}: confirmed at ${entry.confirmedAt}`);
+     * });
+     * ```
+     */
+    getHistory(envelopeId: string, token: string): Promise<ReceiptHistoryResponse>;
+}
+//# sourceMappingURL=ReceiptService.d.ts.map

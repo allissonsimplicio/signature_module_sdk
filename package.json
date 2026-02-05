@@ -1,7 +1,7 @@
 {
-  "name": "signature-module",
-  "version": "1.0.0",
-  "description": "SDK completo para integração com API de assinatura digital",
+  "name": "@alos32/signature-module-sdk",
+  "version": "3.1.0",
+  "description": "SDK TypeScript para integração com AtlasSign API - assinatura digital, setores organizacionais, destinatários internos, templates DOCX, notificações multi-canal",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "directories": {
@@ -10,17 +10,16 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
-    "example:full-flow": "ts-node examples/01-full-signing-flow.ts",
-    "example:templates": "ts-node examples/02-template-management.ts",
-    "example:download-preview": "ts-node examples/04-download-and-preview.ts",
+    "example:basic": "ts-node examples/01-basic-envelope.ts",
+    "example:template": "ts-node examples/02-document-template-workflow.ts",
+    "example:auth": "ts-node examples/03-authentication-workflow.ts",
+    "example:notifications": "ts-node examples/04-notification-workflow.ts",
+    "example:complete": "ts-node examples/05-complete-workflow.ts",
+    "examples:all": "npm run example:basic && npm run example:template && npm run example:auth && npm run example:notifications && npm run example:complete",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:unit": "jest tests/unit",
-    "test:integration": "jest tests/integration",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "test": "jest --config ./jest.config.js",
+    "test:sdk": "jest --config ./jest.config.js"
   },
   "keywords": [
     "digital-signature",
@@ -28,19 +27,26 @@
     "sdk",
     "typescript",
     "envelope",
-    "document-signing"
+    "document-signing",
+    "docx-templates",
+    "notifications",
+    "authentication",
+    "public-verification",
+    "multi-tenant"
   ],
   "author": "Alos",
   "license": "MIT",
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "examples/**/*"
   ],
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "axios": "^1.10.0",
     "dotenv": "^17.2.0",
+    "form-data": "^4.0.1",
     "zod": "^4.0.5"
   },
   "devDependencies": {
@@ -51,5 +57,13 @@
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/allissonsimplicio/signature_module_sdk.git"
   }
 }

@@ -1,18 +1,54 @@
 import { z } from 'zod';
-import { SignerStatus, AuthenticationMethod, DocumentType, Coordinates, Timestamps } from './common.types';
+import { SignerStatus, AuthenticationMethod, DocumentType, Coordinates, Timestamps, QualificationType } from './common.types';
 
 // Input para criação de signatário
+// Quando userId é fornecido (destinatário interno), name e email são preenchidos automaticamente do User
 export interface SignerInput {
-  name: string;
-  email: string;
-  phone_number?: string;
-  document_number?: string; // CPF, CNPJ, etc.
-  document_type?: DocumentType;
-  birth_date?: string; // ISO date
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  nationalIdNumber?: string; // 🆕 CPF, CNPJ (identidade nacional única)
+  documentNumber?: string; // Número do RG, CNH, etc (documento de validação)
+  documentType?: DocumentType;
+  birthDate?: string; // ISO date
   address?: SignerAddress;
-  signature_order?: number;
-  notification_preferences?: NotificationPreferences;
-  custom_fields?: Record<string, any>;
+  // 🔄 FASE 14: Unificação de campos de ordem
+  signatureOrder?: number; // 🗑️ DEPRECATED - usar signingOrder
+  signingOrder?: number; // ✅ Ordem de assinatura (substitui signatureOrder)
+
+  // Campos profissionais
+  role?: string; // Cargo/função do signatário
+  company?: string; // Empresa do signatário
+
+  // Template Role (Fase 7)
+  qualificationRole?: string; // Ex: "CONTRATANTE", "CONTRATADO"
+  // 🆕 FASE 14: Qualification Type
+  qualificationType?: QualificationType; // Tipo de qualificação: parte, testemunha, gestor, etc.
+
+  // Notification Preferences (Fase 6)
+  preferredChannel?: 'email' | 'sms' | 'whatsapp';
+  allowEmail?: boolean;
+  allowSms?: boolean;
+  allowWhatsapp?: boolean;
+
+  // 🆕 SETORES: Destinatário interno
+  /** ID do usuário interno para vincular como signer. Se fornecido, name e email são preenchidos automaticamente. */
+  userId?: string;
+
+  // 🆕 Digital Signature Configuration (Fase 3)
+  /** Requer assinatura digital PAdES para este signatário (estratégia HYBRID/HYBRID_SEALED) */
+  requirePades?: boolean;
+  /** ID do certificado digital específico para este signatário (opcional, usa certificado da organização se não especificado) */
+  useCertificateId?: string;
+
+  // Controles de assinatura
+  isRequired?: boolean; // Assinatura obrigatória (default: true)
+  allowDelegation?: boolean; // Permitir delegação da assinatura
+  allowRefusal?: boolean; // Permitir recusa da assinatura
+  customMessage?: string; // Mensagem personalizada para o signatário
+
+  notificationPreferences?: NotificationPreferences;
+  customFields?: Record<string, any>;
 }
 
 // Endereço do signatário
@@ -23,15 +59,15 @@ export interface SignerAddress {
   neighborhood: string;
   city: string;
   state: string;
-  zip_code: string;
+  zipCode: string;
   country?: string;
 }
 
 // Preferências de notificação do signatário
 export interface NotificationPreferences {
-  email_enabled: boolean;
-  sms_enabled: boolean;
-  whatsapp_enabled: boolean;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  whatsappEnabled: boolean;
   language?: 'pt-BR' | 'en-US' | 'es-ES';
 }
 
@@ -43,64 +79,118 @@ export const SignerAddressSchema = z.object({
   neighborhood: z.string().min(1).max(100),
   city: z.string().min(1).max(100),
   state: z.string().min(2).max(50),
-  zip_code: z.string().min(5).max(20),
+  zipCode: z.string().min(5).max(20),
   country: z.string().max(50).optional(),
 });
 
 // Schema Zod para NotificationPreferences
 export const NotificationPreferencesSchema = z.object({
-  email_enabled: z.boolean(),
-  sms_enabled: z.boolean(),
-  whatsapp_enabled: z.boolean(),
+  emailEnabled: z.boolean(),
+  smsEnabled: z.boolean(),
+  whatsappEnabled: z.boolean(),
   language: z.enum(['pt-BR', 'en-US', 'es-ES']).optional(),
 });
 
 // Schema Zod para SignerInput
 export const SignerInputSchema = z.object({
-  name: z.string().min(1).max(255),
-  email: z.string().email(),
-  phone_number: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional(), // E.164 format
-  document_number: z.string().max(50).optional(),
-  document_type: z.enum(['cpf', 'cnpj', 'rg', 'passport', 'other']).optional(),
-  birth_date: z.string().optional(),
+  name: z.string().min(1).max(255).optional(), // Opcional quando userId fornecido (auto-preenchido)
+  email: z.string().email().optional(), // Opcional quando userId fornecido (auto-preenchido)
+  phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional(), // E.164 format
+  nationalIdNumber: z.string().max(20).optional(), // 🆕
+  documentNumber: z.string().max(50).optional(),
+  documentType: z.enum(['cpf', 'cnpj', 'rg', 'passport', 'cnh', 'other']).optional(),
+  birthDate: z.string().optional(),
   address: SignerAddressSchema.optional(),
-  signature_order: z.number().min(1).optional(),
-  notification_preferences: NotificationPreferencesSchema.optional(),
-  custom_fields: z.record(z.string(), z.any()).optional(),
+  signatureOrder: z.number().min(1).optional(),
+  role: z.string().max(255).optional(),
+  company: z.string().max(255).optional(),
+  qualificationRole: z.string().max(255).optional(),
+  preferredChannel: z.enum(['email', 'sms', 'whatsapp']).optional(),
+  allowEmail: z.boolean().optional(),
+  allowSms: z.boolean().optional(),
+  allowWhatsapp: z.boolean().optional(),
+  notificationPreferences: NotificationPreferencesSchema.optional(),
+  customFields: z.record(z.string(), z.any()).optional(),
+  // 🆕 SETORES: Destinatário interno
+  userId: z.string().optional(),
+  // 🆕 FASE 3: PAdES configuration
+  requirePades: z.boolean().optional(),
+  useCertificateId: z.string().optional(),
+  // Controles de assinatura
+  isRequired: z.boolean().optional(),
+  allowDelegation: z.boolean().optional(),
+  allowRefusal: z.boolean().optional(),
+  customMessage: z.string().max(1000).optional(),
 });
 
 // Signatário completo retornado pela API
-export interface Signer extends SignerInput, Timestamps {
+export interface Signer extends Omit<SignerInput, 'userId'>, Timestamps {
   id: string;
-  envelope_id: string;
+  envelopeId: string;
   status: SignerStatus;
-  signature_url?: string;
-  access_token?: string;
-  access_expires_at?: string;
-  signed_at?: string;
-  rejected_at?: string;
-  rejection_reason?: string;
-  last_access_at?: string;
-  access_count: number;
-  ip_addresses: string[];
-  user_agents: string[];
-  authentication_requirements: AuthenticationRequirement[];
-  qualification_requirements: QualificationRequirement[];
-  signature_evidence: SignatureEvidence[];
-  is_authenticated: boolean;
-  is_qualified: boolean;
-  can_sign: boolean;
+  nationalIdNumber?: string; // 🆕
+  signatureUrl?: string;
+  signatureOrder?: number;
+
+  // 🆕 JWT Token System (Fase 12)
+  accessToken?: string; // JWT access token
+  refreshToken?: string; // Refresh token
+  accessExpiresAt?: string; // Access token expiration
+  refreshExpiresAt?: string; // Refresh token expiration
+  isRevoked?: boolean; // Token revocation flag
+
+  // 🆕 FASE signature_fields: Assinatura e Rubrica salvas no perfil
+  signatureImageUrl?: string; // URL da imagem da assinatura salva no perfil
+  signatureImageKey?: string; // Chave S3 da imagem da assinatura
+  initialImageUrl?: string; // URL da imagem da rubrica salva no perfil
+  initialImageKey?: string; // Chave S3 da imagem da rubrica
+
+  // Signing Status
+  signedAt?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  lastAccessAt?: string;
+  accessCount: number;
+  ipAddresses: string[];
+  userAgents: string[];
+
+  // Fase 8 - Authentication
+  authenticationRequirements: AuthenticationRequirement[];
+  qualificationRequirements: QualificationRequirement[];
+  signatureEvidence: SignatureEvidence[];
+  isAuthenticated: boolean;
+  isQualified: boolean;
+  canSign: boolean;
+
+  // 🆕 Self-Signing Feature
+  /** Flag que identifica signatários auto-adicionados pelo criador do envelope */
+  isSelfSigning?: boolean;
+
+  // 🆕 SETORES: Destinatário interno
+  /** ID do usuário interno vinculado (null se externo) */
+  userId?: string | null;
+  /** Flag indicando se é destinatário interno da organização */
+  isInternal?: boolean;
+  /** Dados do usuário interno (quando disponível) */
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null;
 }
 
 // Requisito de autenticação
 export interface AuthenticationRequirement {
   id: string;
-  signer_id: string;
+  signerId: string;
   method: AuthenticationMethod;
   description: string;
-  is_required: boolean;
-  is_satisfied: boolean;
-  satisfied_at?: string;
+  isRequired: boolean;
+  isSatisfied: boolean;
+  satisfiedAt?: string;
   configuration?: AuthenticationConfiguration;
   evidence?: AuthenticationEvidence;
 }
@@ -108,142 +198,184 @@ export interface AuthenticationRequirement {
 // Configuração específica do método de autenticação
 export interface AuthenticationConfiguration {
   // Para token via email/SMS/WhatsApp
-  token_length?: number;
-  token_expiry_minutes?: number;
-  max_attempts?: number;
+  tokenLength?: number;
+  tokenExpiryMinutes?: number;
+  maxAttempts?: number;
   
   // Para geolocalização
-  required_accuracy_meters?: number;
-  allowed_locations?: Coordinates[];
+  requiredAccuracyMeters?: number;
+  allowedLocations?: Coordinates[];
   
   // Para IP
-  allowed_ip_ranges?: string[];
+  allowedIpRanges?: string[];
   
   // Para documentos
-  required_document_types?: string[];
-  require_face_match?: boolean;
+  requiredDocumentTypes?: string[];
+  requireFaceMatch?: boolean;
 }
 
 // Evidência de autenticação coletada
 export interface AuthenticationEvidence {
   method: AuthenticationMethod;
-  collected_at: string;
-  ip_address?: string;
-  user_agent?: string;
+  collectedAt: string;
+  ipAddress?: string;
+  userAgent?: string;
   location?: Coordinates;
-  token_used?: string;
-  document_images?: string[]; // URLs das imagens
-  face_match_score?: number;
-  additional_data?: Record<string, any>;
+  tokenUsed?: string;
+  documentImages?: string[]; // URLs das imagens
+  faceMatchScore?: number;
+  additionalData?: Record<string, any>;
 }
 
 // Requisito de qualificação
 export interface QualificationRequirement {
   id: string;
-  document_id: string;
-  signer_id: string;
-  qualification_type: 'parte' | 'testemunha';
+  documentId: string;
+  signerId: string;
+  qualificationType: 'parte' | 'testemunha' | 'other';
+  level?: string; // Nível de qualificação (opcional)
   description?: string;
-  is_satisfied: boolean;
-  satisfied_at?: string;
+  isSatisfied: boolean;
+  satisfiedAt?: string;
 }
 
 // Evidências da assinatura
 export interface SignatureEvidence {
   id: string;
-  type: 'signature_image' | 'biometric_data' | 'certificate' | 'timestamp' | 'audit_trail';
+  type: 'signatureImage' | 'biometricData' | 'certificate' | 'timestamp' | 'auditTrail';
   data: Record<string, any>;
-  collected_at: string;
+  collectedAt: string;
   hash?: string;
 }
 
 // Schema Zod para Signer
 export const SignerSchema = z.object({
   id: z.string(),
-  envelope_id: z.string(),
+  envelopeId: z.string(),
   name: z.string(),
   email: z.string().email(),
-  phone_number: z.string().optional(),
-  document_number: z.string().optional(),
-  document_type: z.enum(['cpf', 'cnpj', 'rg', 'passport', 'other']).optional(),
-  birth_date: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  nationalIdNumber: z.string().optional(), // 🆕
+  documentNumber: z.string().optional(),
+  documentType: z.enum(['cpf', 'cnpj', 'rg', 'passport', 'cnh', 'other']).optional(),
+  birthDate: z.string().optional(),
   address: SignerAddressSchema.optional(),
-  signature_order: z.number().min(1).optional(),
-  notification_preferences: NotificationPreferencesSchema.optional(),
-  custom_fields: z.record(z.string(), z.any()).optional(),
+  signatureOrder: z.number().min(1).optional(),
+  notificationPreferences: NotificationPreferencesSchema.optional(),
+  customFields: z.record(z.string(), z.any()).optional(),
   status: z.enum(['pending', 'signed', 'rejected', 'canceled']),
-  signature_url: z.string().url().optional(),
-  access_token: z.string().optional(),
-  access_expires_at: z.string().datetime().optional(),
-  signed_at: z.string().datetime().optional(),
-  rejected_at: z.string().datetime().optional(),
-  rejection_reason: z.string().max(500).optional(),
-  last_access_at: z.string().datetime().optional(),
-  access_count: z.number().min(0),
-  ip_addresses: z.array(z.string()),
-  user_agents: z.array(z.string()),
-  authentication_requirements: z.array(z.object({
+  signatureUrl: z.string().url().optional(),
+  accessToken: z.string().optional(),
+  accessExpiresAt: z.string().datetime().optional(),
+  signedAt: z.string().datetime().optional(),
+  rejectedAt: z.string().datetime().optional(),
+  rejectionReason: z.string().max(500).optional(),
+  lastAccessAt: z.string().datetime().optional(),
+  accessCount: z.number().min(0),
+  ipAddresses: z.array(z.string()),
+  userAgents: z.array(z.string()),
+  authenticationRequirements: z.array(z.object({
     id: z.string(),
-    signer_id: z.string(),
-    method: z.enum(['email_token', 'whatsapp_token', 'sms_token', 'ip_address', 'geolocation', 'official_document', 'selfie_with_document', 'address_proof']),
+    signerId: z.string(),
+    method: z.enum(['emailToken', 'whatsappToken', 'smsToken', 'ipAddress', 'geolocation', 'officialDocument', 'selfieWithDocument', 'addressProof', 'selfie']),
     description: z.string().max(500),
-    is_required: z.boolean(),
-    is_satisfied: z.boolean(),
-    satisfied_at: z.string().datetime().optional(),
+    isRequired: z.boolean(),
+    isSatisfied: z.boolean(),
+    satisfiedAt: z.string().datetime().optional(),
     configuration: z.record(z.string(), z.any()).optional(),
     evidence: z.record(z.string(), z.any()).optional(),
   })),
-  qualification_requirements: z.array(z.object({
+  qualificationRequirements: z.array(z.object({
     id: z.string(),
-    document_id: z.string(),
-    signer_id: z.string(),
-    qualification_type: z.enum(['parte', 'testemunha']),
+    documentId: z.string(),
+    signerId: z.string(),
+    qualificationType: z.enum(['parte', 'testemunha', 'other']),
+    level: z.string().optional(),
     description: z.string().max(500).optional(),
-    is_satisfied: z.boolean(),
-    satisfied_at: z.string().datetime().optional(),
+    isSatisfied: z.boolean(),
+    satisfiedAt: z.string().datetime().optional(),
   })),
-  signature_evidence: z.array(z.object({
+  signatureEvidence: z.array(z.object({
     id: z.string(),
-    type: z.enum(['signature_image', 'biometric_data', 'certificate', 'timestamp', 'audit_trail']),
+    type: z.enum(['signatureImage', 'biometricData', 'certificate', 'timestamp', 'auditTrail']),
     data: z.record(z.string(), z.any()),
-    collected_at: z.string().datetime(),
+    collectedAt: z.string().datetime(),
     hash: z.string().optional(),
   })),
-  is_authenticated: z.boolean(),
-  is_qualified: z.boolean(),
-  can_sign: z.boolean(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  isAuthenticated: z.boolean(),
+  isQualified: z.boolean(),
+  canSign: z.boolean(),
+  // 🆕 SETORES: Destinatário interno
+  userId: z.string().nullable().optional(),
+  isInternal: z.boolean().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 // Filtros para busca de signatários
 export interface SignerFilters {
-  envelope_id?: string;
+  envelopeId?: string;
   status?: SignerStatus | SignerStatus[];
   name?: string;
   email?: string;
-  document_number?: string;
-  is_authenticated?: boolean;
-  is_qualified?: boolean;
-  can_sign?: boolean;
-  signed_from?: string; // ISO date
-  signed_to?: string; // ISO date
+  nationalIdNumber?: string; // 🆕
+  documentNumber?: string;
+  isAuthenticated?: boolean;
+  isQualified?: boolean;
+  canSign?: boolean;
+  signedFrom?: string; // ISO date
+  signedTo?: string; // ISO date
   page?: number;
-  per_page?: number;
-  sort_by?: 'name' | 'email' | 'created_at' | 'signed_at' | 'signature_order';
-  sort_order?: 'asc' | 'desc';
+  perPage?: number;
+  sortBy?: 'name' | 'email' | 'createdAt' | 'signedAt' | 'signatureOrder';
+  sortOrder?: 'asc' | 'desc';
 }
 
 // Input para adicionar requisito de autenticação
 export interface AddAuthenticationRequirementInput {
   method: AuthenticationMethod;
-  is_required?: boolean;
+  isRequired?: boolean;
   configuration?: AuthenticationConfiguration;
   description?: string;
 }
 
 // Input para adicionar requisito de qualificação
 export interface AddQualificationRequirementInput {
-  qualification_type: 'parte' | 'testemunha';
+  signerId: string;
+  qualificationType: 'parte' | 'testemunha' | 'other';
+  level?: string; // Nível de qualificação (opcional)
   description?: string;
+}
+
+// 🆕 Resposta ao obter URL de assinatura (com JWT tokens)
+export interface SigningUrlResponse {
+  url: string; // Complete signing URL with embedded JWT token
+  accessToken: string; // JWT access token (15 min default)
+  refreshToken: string; // Refresh token (7 days default)
+  expiresAt: string; // Access token expiration (ISO 8601)
+  refreshExpiresAt: string; // Refresh token expiration (ISO 8601)
+}
+
+// 🆕 Token pair response (refresh operation)
+export interface TokenPairResponse {
+  accessToken: string; // New JWT access token
+  refreshToken: string; // New refresh token (rotated)
+  expiresIn: number; // Access token expiration in seconds
+  accessExpiresAt: string; // ISO 8601 date string
+  refreshExpiresAt: string; // ISO 8601 date string
+}
+
+// 🆕 Token revocation response
+export interface RevokeTokenResponse {
+  revoked: boolean;
+  message: string;
+}
+
+// Resposta ao iniciar autenticação
+export interface StartAuthenticationResponse {
+  signerId: string;
+  authenticationStarted: boolean;
+  requiredMethods: string[];
+  nextSteps: string[];
+  message: string;
 }

@@ -1,4 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
+import type { ValidationErrorResponse, ValidationErrorCode } from './types/authentication.types';
 
 /**
  * Classe de erro customizada para a API de assinatura digital
@@ -11,6 +12,9 @@ export class ApiError extends Error {
   public readonly code?: string;
   public readonly errors?: string[];
   public readonly timestamp: string;
+  public readonly rateLimitLimit?: number;
+  public readonly rateLimitRemaining?: number;
+  public readonly rateLimitReset?: number;
 
   constructor(
     message: string,
@@ -19,7 +23,8 @@ export class ApiError extends Error {
     response?: AxiosResponse,
     request?: any,
     code?: string,
-    errors?: string[]
+    errors?: string[],
+    rateLimit?: { limit?: number; remaining?: number; reset?: number }
   ) {
     super(message);
     
@@ -31,6 +36,9 @@ export class ApiError extends Error {
     this.code = code;
     this.errors = errors;
     this.timestamp = new Date().toISOString();
+    this.rateLimitLimit = rateLimit?.limit;
+    this.rateLimitRemaining = rateLimit?.remaining;
+    this.rateLimitReset = rateLimit?.reset;
 
     // Mantém o stack trace correto
     if (Error.captureStackTrace) {
@@ -50,10 +58,25 @@ export class ApiError extends Error {
     let statusText = 'Internal Server Error';
     let code = axiosError.code;
     let errors: string[] = [];
+    let rateLimit: { limit?: number; remaining?: number; reset?: number } = {};
 
     if (response) {
       status = response.status;
       statusText = response.statusText;
+      
+      // Extrai headers de rate limit
+      const headers = response.headers;
+      if (headers) {
+        if (headers['x-ratelimit-limit']) {
+          rateLimit.limit = parseInt(headers['x-ratelimit-limit'], 10);
+        }
+        if (headers['x-ratelimit-remaining']) {
+          rateLimit.remaining = parseInt(headers['x-ratelimit-remaining'], 10);
+        }
+        if (headers['x-ratelimit-reset']) {
+          rateLimit.reset = parseInt(headers['x-ratelimit-reset'], 10);
+        }
+      }
       
       // Tenta extrair informações de erro do corpo da resposta
       if (response.data) {
@@ -76,8 +99,8 @@ export class ApiError extends Error {
             message = (response.data as any).detail;
           }
           
-          if ((response.data as any).error_description) {
-            message = (response.data as any).error_description;
+          if ((response.data as any).errorDescription) {
+            message = (response.data as any).errorDescription;
           }
         } else if (typeof response.data === 'string') {
           message = response.data;
@@ -90,7 +113,7 @@ export class ApiError extends Error {
       statusText = 'Network Error';
     }
 
-    return new ApiError(message, status, statusText, response, request, code, errors);
+    return new ApiError(message, status, statusText, response, request, code, errors, rateLimit);
   }
 
   /**
@@ -156,6 +179,87 @@ export class ApiError extends Error {
   }
 
   /**
+   * 🆕 Verifica se o erro é de validação de documento
+   *
+   * Erros de validação ocorrem quando a imagem é rejeitada antes
+   * do processamento AI (validação pré-upload).
+   *
+   * @returns true se for erro de validação de imagem
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   await client.authentication.uploadDocument(authReqId, { file });
+   * } catch (error) {
+   *   if (error.isDocumentValidationError()) {
+   *     console.error('Imagem rejeitada:', error.message);
+   *   }
+   * }
+   * ```
+   */
+  isDocumentValidationError(): boolean {
+    return (
+      this.status === 400 &&
+      !!(this.code?.startsWith('IMAGE_') ||
+       this.code?.includes('FACE') ||
+       this.code?.includes('DOC_'))
+    );
+  }
+
+  /**
+   * 🆕 Extrai ValidationErrorResponse do erro
+   *
+   * Retorna os detalhes estruturados do erro de validação,
+   * incluindo mensagem amigável e dica de como corrigir.
+   *
+   * @returns Objeto ValidationErrorResponse ou null se não for erro de validação
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   await client.authentication.uploadDocument(authReqId, { file });
+   * } catch (error) {
+   *   const validationError = error.getValidationError();
+   *   if (validationError) {
+   *     console.error('Erro:', validationError.message);
+   *     console.log('Dica:', validationError.humanTip);
+   *     console.log('Pode retentar:', validationError.canRetry);
+   *
+   *     if (validationError.metadata) {
+   *       console.log('Detalhes:', validationError.metadata);
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  getValidationError(): ValidationErrorResponse | null {
+    if (!this.isDocumentValidationError() || !this.response?.data) {
+      return null;
+    }
+
+    const data = this.response.data as any;
+
+    // O servidor pode retornar o erro de validação em diferentes formatos
+    if (data.message && typeof data.message === 'object') {
+      return data.message as ValidationErrorResponse;
+    }
+
+    // Fallback: construir a partir dos dados disponíveis
+    if (data.code && data.message) {
+      return {
+        status: 'REJECTED',
+        code: data.code as ValidationErrorCode,
+        message: data.message,
+        humanTip: data.humanTip || data.message,
+        canRetry: data.canRetry !== false,
+        metadata: data.metadata,
+      };
+    }
+
+    return null;
+  }
+
+  /**
    * Retorna uma representação JSON do erro
    */
   toJSON(): object {
@@ -167,6 +271,11 @@ export class ApiError extends Error {
       code: this.code,
       errors: this.errors,
       timestamp: this.timestamp,
+      rateLimit: {
+        limit: this.rateLimitLimit,
+        remaining: this.rateLimitRemaining,
+        reset: this.rateLimitReset,
+      },
       stack: this.stack,
     };
   }
@@ -185,6 +294,12 @@ export class ApiError extends Error {
       errorStr += `\nErros de validação:\n${this.errors.map(err => `  - ${err}`).join('\n')}`;
     }
     
+    if (this.isRateLimitError() && this.rateLimitReset) {
+      const now = Math.floor(Date.now() / 1000);
+      const resetIn = Math.max(0, this.rateLimitReset - now);
+      errorStr += `\nRate Limit: Limit=${this.rateLimitLimit}, Remaining=${this.rateLimitRemaining}, Resets in ${resetIn}s`;
+    }
+
     return errorStr;
   }
 
@@ -221,5 +336,44 @@ export class ApiError extends Error {
    */
   static rateLimitError(message: string = 'Muitas requisições. Tente novamente mais tarde.'): ApiError {
     return new ApiError(message, 429, 'Too Many Requests', undefined, undefined, 'RATE_LIMIT_ERROR');
+  }
+
+  /**
+   * 🆕 Cria um erro de validação de documento
+   *
+   * Factory method para criar erros de validação de imagem/documento.
+   *
+   * @param code - Código de erro de validação
+   * @param message - Mensagem de erro
+   * @param humanTip - Dica amigável de como corrigir
+   * @param metadata - Metadados adicionais (tamanho, dimensões, etc)
+   * @returns ApiError configurado como erro de validação
+   *
+   * @example
+   * ```typescript
+   * const error = ApiError.documentValidationError(
+   *   'IMAGE_TOO_SMALL',
+   *   'A resolução da imagem é muito baixa (mínimo 640x480).',
+   *   'Use uma câmera de melhor qualidade ou aumente a resolução da foto.',
+   *   { fileSize: 245678, dimensions: { width: 320, height: 240 } }
+   * );
+   * ```
+   */
+  static documentValidationError(
+    code: ValidationErrorCode,
+    message: string,
+    humanTip: string,
+    metadata?: any
+  ): ApiError {
+    return new ApiError(
+      message,
+      400,
+      'Bad Request',
+      undefined,
+      undefined,
+      code,
+      [humanTip],
+      undefined
+    );
   }
 }
