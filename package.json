@@ -1,6 +1,6 @@
 {
   "name": "@alos32/signature-module-sdk",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "SDK TypeScript para integração com AtlasSign API - assinatura digital, setores organizacionais, destinatários internos, templates DOCX, notificações multi-canal",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
