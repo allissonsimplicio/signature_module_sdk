@@ -189,6 +189,18 @@ export {
   ValidationErrorCodeSchema,
 } from './types/authentication.types';
 
+// 🆕 OAuth types
+export type {
+  AuthProvider,
+  UserWithOAuth,
+  GoogleAuthUrlResponse,
+} from './types/authentication.types';
+
+export {
+  AuthProviderSchema,
+  UserWithOAuthSchema,
+} from './types/authentication.types';
+
 // Public Verification types (Fase 4)
 export type {
   VerificationResponse,

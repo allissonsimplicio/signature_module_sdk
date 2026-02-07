@@ -46,6 +46,8 @@ export type { NotificationTemplate, NotificationLog, CreateNotificationTemplateD
 export { NotificationTemplateSchema, NotificationLogSchema, CreateNotificationTemplateDtoSchema, NotificationHistoryFiltersSchema, NotificationTemplateFiltersSchema, } from './types/notification.types';
 export type { AuthenticationRequirement, AuthenticationMethod, ReusableAuthMethod, CreateAuthenticationRequirementDto, VerifyTokenDto, RecordIpLocationDto, UploadAuthDocumentDto, SendAuthTokenResponse, VerifyTokenResponse, AuthenticationStatusResponse, ReuseDocumentResponse, ValidationStatus, ValidationErrorCode, ValidationResult, ValidationProgressResponse, ValidationErrorResponse, UploadAuthDocumentResponse, RecordIpLocationResponse, } from './types/authentication.types';
 export { ValidationStatusSchema, ValidationErrorCodeSchema, } from './types/authentication.types';
+export type { AuthProvider, UserWithOAuth, GoogleAuthUrlResponse, } from './types/authentication.types';
+export { AuthProviderSchema, UserWithOAuthSchema, } from './types/authentication.types';
 export type { VerificationResponse, PublicDownloadResponse, SignatureFieldInfo, } from './types/public-verification.types';
 export { DigitalCertificate, CertificateStats, UploadCertificateDto, RevokeCertificateDto, CertificateFilters, UploadCertificateResponse, CertificateType, SignatureStrategy, } from './types/digital-signature.types';
 export { CertificateTypeSchema, SignatureStrategySchema, UploadCertificateDtoSchema, RevokeCertificateDtoSchema, CertificateFiltersSchema, DigitalCertificateSchema, CertificateStatsSchema, } from './types/digital-signature.types';

@@ -452,3 +452,60 @@ export const AuthenticationRequirementSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
+
+// ==========================================
+// 🆕 OAUTH TYPES
+// ==========================================
+
+/**
+ * Provedor de autenticação do usuário
+ */
+export type AuthProvider = 'local' | 'google';
+
+/**
+ * Resposta da URL de autenticação Google
+ * Usado quando o frontend precisa da URL de redirect
+ */
+export interface GoogleAuthUrlResponse {
+  url: string;
+}
+
+/**
+ * Usuário com campos OAuth
+ * Extensão do User base com campos de autenticação externa
+ */
+export interface UserWithOAuth {
+  id: string;
+  email: string;
+  name: string;
+  organizationId?: string;
+  role: string;
+  isActive: boolean;
+  googleId?: string | null;
+  authProvider: AuthProvider;
+  avatarUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Schema Zod para AuthProvider
+ */
+export const AuthProviderSchema = z.enum(['local', 'google']);
+
+/**
+ * Schema Zod para UserWithOAuth
+ */
+export const UserWithOAuthSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  name: z.string(),
+  organizationId: z.string().optional(),
+  role: z.string(),
+  isActive: z.boolean(),
+  googleId: z.string().nullable().optional(),
+  authProvider: AuthProviderSchema,
+  avatarUrl: z.string().url().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});

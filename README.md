@@ -12,6 +12,74 @@ SDK completo em TypeScript para integração com a API de Assinatura Digital. In
 npm install @alos32/signature-module-sdk
 ```
 
+## 🔐 Google OAuth Login
+
+A API suporta login via Google OAuth 2.0 além do login tradicional (email/senha).
+
+### Fluxo de Autenticação
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Frontend  │     │   Backend   │     │   Google    │
+└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
+       │                   │                   │
+       │ GET /auth/google  │                   │
+       │──────────────────>│                   │
+       │   302 Redirect    │                   │
+       │<──────────────────│                   │
+       │                   │                   │
+       │ User authorizes on Google             │
+       │──────────────────────────────────────>│
+       │                   │                   │
+       │ Redirect to callback with tokens      │
+       │<──────────────────────────────────────│
+```
+
+### Endpoints
+
+| Endpoint | Descrição |
+|----------|-----------|
+| `GET /auth/google` | Inicia o fluxo OAuth (redireciona para Google) |
+| `GET /auth/google/callback` | Callback que processa o retorno e gera JWT |
+| `POST /auth/google/link` | Vincula Google a conta existente (autenticado) |
+
+### Comportamento
+
+- **Usuário novo via Google** → Cria conta + organização automaticamente
+- **Email já existe** → Vincula Google à conta existente
+- **Já tem Google vinculado** → Login direto
+
+### Exemplo de Integração (React/Next.js)
+
+```typescript
+// Botão de login
+const handleGoogleLogin = () => {
+  window.location.href = `${API_URL}/api/v1/auth/google`;
+};
+
+// Página de callback (/auth/callback)
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const accessToken = params.get('accessToken');
+  const refreshToken = params.get('refreshToken');
+  
+  if (accessToken && refreshToken) {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    router.push('/dashboard');
+  }
+}, []);
+```
+
+### Types
+
+```typescript
+import { AuthProvider, UserWithOAuth } from '@alos32/signature-module-sdk';
+
+// AuthProvider: 'local' | 'google'
+// UserWithOAuth inclui: googleId, authProvider, avatarUrl
+```
+
 ## 📋 Índice
 
 - [Recursos Principais](#-recursos-principais)

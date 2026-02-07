@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthenticationRequirementSchema = exports.ValidationErrorCodeSchema = exports.ValidationStatusSchema = void 0;
+exports.UserWithOAuthSchema = exports.AuthProviderSchema = exports.AuthenticationRequirementSchema = exports.ValidationErrorCodeSchema = exports.ValidationStatusSchema = void 0;
 const zod_1 = require("zod");
 // ==========================================
 // SCHEMAS ZOD
@@ -57,6 +57,26 @@ exports.AuthenticationRequirementSchema = zod_1.z.object({
     rejectionReason: exports.ValidationErrorCodeSchema.optional(),
     jobId: zod_1.z.string().optional(),
     signerId: zod_1.z.string(),
+    createdAt: zod_1.z.string().datetime(),
+    updatedAt: zod_1.z.string().datetime(),
+});
+/**
+ * Schema Zod para AuthProvider
+ */
+exports.AuthProviderSchema = zod_1.z.enum(['local', 'google']);
+/**
+ * Schema Zod para UserWithOAuth
+ */
+exports.UserWithOAuthSchema = zod_1.z.object({
+    id: zod_1.z.string(),
+    email: zod_1.z.string().email(),
+    name: zod_1.z.string(),
+    organizationId: zod_1.z.string().optional(),
+    role: zod_1.z.string(),
+    isActive: zod_1.z.boolean(),
+    googleId: zod_1.z.string().nullable().optional(),
+    authProvider: exports.AuthProviderSchema,
+    avatarUrl: zod_1.z.string().url().nullable().optional(),
     createdAt: zod_1.z.string().datetime(),
     updatedAt: zod_1.z.string().datetime(),
 });

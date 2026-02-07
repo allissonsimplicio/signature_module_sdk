@@ -346,4 +346,58 @@ export declare const AuthenticationRequirementSchema: z.ZodObject<{
     createdAt: z.ZodString;
     updatedAt: z.ZodString;
 }, z.core.$strip>;
+/**
+ * Provedor de autenticação do usuário
+ */
+export type AuthProvider = 'local' | 'google';
+/**
+ * Resposta da URL de autenticação Google
+ * Usado quando o frontend precisa da URL de redirect
+ */
+export interface GoogleAuthUrlResponse {
+    url: string;
+}
+/**
+ * Usuário com campos OAuth
+ * Extensão do User base com campos de autenticação externa
+ */
+export interface UserWithOAuth {
+    id: string;
+    email: string;
+    name: string;
+    organizationId?: string;
+    role: string;
+    isActive: boolean;
+    googleId?: string | null;
+    authProvider: AuthProvider;
+    avatarUrl?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+/**
+ * Schema Zod para AuthProvider
+ */
+export declare const AuthProviderSchema: z.ZodEnum<{
+    local: "local";
+    google: "google";
+}>;
+/**
+ * Schema Zod para UserWithOAuth
+ */
+export declare const UserWithOAuthSchema: z.ZodObject<{
+    id: z.ZodString;
+    email: z.ZodString;
+    name: z.ZodString;
+    organizationId: z.ZodOptional<z.ZodString>;
+    role: z.ZodString;
+    isActive: z.ZodBoolean;
+    googleId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    authProvider: z.ZodEnum<{
+        local: "local";
+        google: "google";
+    }>;
+    avatarUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+}, z.core.$strip>;
 //# sourceMappingURL=authentication.types.d.ts.map
